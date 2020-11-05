@@ -5,40 +5,51 @@
 package templatex
 
 import (
+	"bytes"
 	"fmt"
 	"os"
-	"sort"
+	"strings"
 	"testing"
 )
 
 func TestDefinedTemplates(t *testing.T) {
 	tt := New("index", ".html")
-	if err := tt.ParseRoot("test/testdata"); err != nil {
+	if err := tt.ParseRoot("test/data"); err != nil {
 		t.Fatal(err)
 	}
 	nss := tt.DefinedNamespaces()
-	sort.Strings(nss)
 	fmt.Println(nss)
 }
 
-func TestTestTemplates(t *testing.T) {
+func TestNamespaces(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
 	tt := New("index", ".html")
-	if err := tt.ParseRoot("test/testdata"); err != nil {
+	if err := tt.ParseRoot("test/data"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ExecuteNamespace(os.Stdout, "/", nil); err != nil {
+	if err := tt.ExecuteNamespace(buf, "/", nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ExecuteNamespace(os.Stdout, "/home", nil); err != nil {
+	if err := tt.ExecuteNamespace(buf, "/home", nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ExecuteNamespace(os.Stdout, "/settings", nil); err != nil {
+	if err := tt.ExecuteNamespace(buf, "/settings", nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ExecuteNamespace(os.Stdout, "/settings/preferences", nil); err != nil {
+	if err := tt.ExecuteNamespace(buf, "/settings/preferences", nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ExecuteNamespace(os.Stdout, "/settings/profile", nil); err != nil {
+	if err := tt.ExecuteNamespace(buf, "/settings/profile", nil); err != nil {
 		t.Fatal(err)
+	}
+	var verbose bool
+	for _, v := range os.Args {
+		if strings.HasPrefix(v, "-test.v") {
+			verbose = true
+			break
+		}
+	}
+	if verbose {
+		fmt.Println(buf.String())
 	}
 }
