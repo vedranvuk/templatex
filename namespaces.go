@@ -108,7 +108,7 @@ func (ns *Namespaces) ExecuteNamespace(w io.Writer, path string, data interface{
 
 	tt, found := ns.namespaces[path]
 	if !found {
-		return ErrNamespaceNotFound.WrapArgs(path)
+		return ErrNotFound.WrapArgs(path)
 	}
 	return tt.ExecuteTemplate(w, ns.index+ns.ext, data)
 }

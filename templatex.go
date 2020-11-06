@@ -7,11 +7,12 @@ package templatex
 import "github.com/vedranvuk/errorex"
 
 var (
-	// ErrTemplater is the base error of templater package.
-	ErrTemplater = errorex.New("templater")
+	// ErrTemplatex is the base error of templatex package.
+	ErrTemplatex = errorex.New("templatex")
+
 	// ErrParse is returned when a parse error occurs.
-	ErrParse = ErrTemplater.Wrap("parse error")
-	// ErrNamespaceNotFound is returned when a non-existent namespace is
-	// addressed in an ExecuteNamespace call.
-	ErrNamespaceNotFound = ErrTemplater.WrapFormat("template '%s' not found")
+	ErrParse = ErrTemplatex.Wrap("parse error")
+	// ErrNotFound is returned when a non-existent namespace is
+	// being addressed.
+	ErrNotFound = ErrTemplatex.WrapFormat("namespace '%s' not found")
 )
