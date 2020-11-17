@@ -11,6 +11,8 @@ import (
 	"path"
 	"path/filepath"
 	"sync"
+
+	"github.com/vedranvuk/fs"
 )
 
 // ParseRoot is a helper that combines New and Namespaces.ParseRoot.
@@ -19,6 +21,15 @@ import (
 func ParseRoot(root, index, ext string) (*Namespaces, error) {
 	t := New(index, ext)
 	if err := t.ParseRoot(root); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+// ParseRootFS is the FS version of ParseRoot.
+func ParseRootFS(filesys fs.FS, root, index, ext string) (*Namespaces, error) {
+	t := New(index, ext)
+	if err := t.ParseRootFS(filesys, root); err != nil {
 		return nil, err
 	}
 	return t, nil
@@ -88,6 +99,14 @@ func (ns *Namespaces) ParseRoot(root string) error {
 	defer ns.mu.Unlock()
 
 	return ns.parseDir(path.Clean(root), "/", template.New(""))
+}
+
+// ParseRootFS is like ParseRoot but works with an FS.
+func (ns *Namespaces) ParseRootFS(filesys fs.FS, root string) error {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	return ns.parseDirFS(filesys, path.Clean(root), "/", template.New(""))
 }
 
 // Namespace returns a namespace template by name if found and a truth if it
@@ -160,6 +179,63 @@ func (ns *Namespaces) parseDir(dir, nsname string, tmpl *template.Template) erro
 			return ErrParse.WrapCause("clone", err)
 		}
 		if err := ns.parseDir(fn, tn, nt); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// parseDir is a recursive function that parses a template directory dir into
+// tmpl and registers it as a namespace with ns under specified nsname.
+// If an error occurs it is returned.
+func (ns *Namespaces) parseDirFS(filesys fs.FS, dir, nsname string, tmpl *template.Template) error {
+	dirf, err := filesys.Open(dir)
+	if err != nil {
+		return ErrParse.WrapCause("", err)
+	}
+	rf, ok := dirf.(fs.ReadDirFile)
+	if !ok {
+		return ErrParse.WrapCause("", ErrUnsupportedOp.WrapArgs("ReadDirFile"))
+	}
+	fis, err := rf.ReadDir(-1)
+	if err != nil {
+		return ErrParse.WrapCause("read file infos", err)
+	}
+	subs := make([]string, 0, len(fis))
+	for _, fi := range fis {
+		if fi.IsDir() {
+			subs = append(subs, fi.Name())
+			continue
+		}
+		match, err := filepath.Match("*"+ns.ext, fi.Name())
+		if err != nil {
+			return ErrParse.WrapCause("file extension match", err)
+		}
+		if !match {
+			continue
+		}
+		tf, err := filesys.Open(path.Join(dir, fi.Name()))
+		if err != nil {
+			return ErrParse.WrapCause("", err)
+		}
+		defer tf.Close()
+		tfb, err := ioutil.ReadAll(tf)
+		if err != nil {
+			return ErrParse.WrapCause("", err)
+		}
+		if _, err := tmpl.Parse(string(tfb)); err != nil {
+			return ErrParse.WrapCause("parse template", err)
+		}
+	}
+	ns.namespaces[nsname] = tmpl
+	for _, sub := range subs {
+		fn := filepath.Join(dir, sub)
+		tn := path.Join(nsname, sub)
+		nt, err := tmpl.Clone()
+		if err != nil {
+			return ErrParse.WrapCause("clone", err)
+		}
+		if err := ns.parseDirFS(filesys, fn, tn, nt); err != nil {
 			return err
 		}
 	}
