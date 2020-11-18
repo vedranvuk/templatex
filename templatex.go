@@ -9,13 +9,4 @@ import "github.com/vedranvuk/errorex"
 var (
 	// ErrTemplatex is the base error of templatex package.
 	ErrTemplatex = errorex.New("templatex")
-
-	// ErrParse is returned when a parse error occurs.
-	ErrParse = ErrTemplatex.Wrap("parse error")
-	// ErrNotFound is returned when a non-existent namespace is
-	// being addressed.
-	ErrNotFound = ErrTemplatex.WrapFormat("namespace '%s' not found")
-
-	// ErrUnsupportedOp is returned when an unsupporrted op is encountered in an FS.
-	ErrUnsupportedOp = ErrTemplatex.WrapFormat("unsupported operation '%s'")
 )

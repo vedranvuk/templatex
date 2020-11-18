@@ -15,6 +15,17 @@ import (
 	"github.com/vedranvuk/fs"
 )
 
+var (
+	// ErrParse is returned when a parse error occurs.
+	ErrParse = ErrTemplatex.Wrap("parse error")
+	// ErrNotFound is returned when a non-existent namespace is
+	// being addressed.
+	ErrNotFound = ErrTemplatex.WrapFormat("namespace '%s' not found")
+
+	// ErrUnsupportedOp is returned when an unsupporrted op is encountered in an FS.
+	ErrUnsupportedOp = ErrTemplatex.WrapFormat("unsupported operation '%s'")
+)
+
 // ParseRoot is a helper that combines New and Namespaces.ParseRoot.
 // Returns a nil *Namespaces and an error if one occurs.
 // For details see New and Namespaces.ParseRoot.
@@ -106,7 +117,7 @@ func (ns *Namespaces) ParseRootFS(filesys fs.FS, root string) error {
 	ns.mu.Lock()
 	defer ns.mu.Unlock()
 
-	return ns.parseDirFS(filesys, path.Clean(root), "/", template.New(""))
+	return ns.parseDirFS(filesys, path.Clean(root), "/", template.New(ns.index+ns.ext))
 }
 
 // Namespace returns a namespace template by name if found and a truth if it
