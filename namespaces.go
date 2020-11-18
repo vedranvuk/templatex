@@ -148,37 +148,37 @@ func (ns *Namespaces) DefinedNamespaces() (result []string) {
 // tmpl and registers it as a namespace with ns under specified nsname.
 // If an error occurs it is returned.
 func (ns *Namespaces) parseDir(dir, nsname string, tmpl *template.Template) error {
-	fis, err := ioutil.ReadDir(dir)
+	fileinfos, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return ErrParse.WrapCause("read file infos", err)
 	}
-	subs := make([]string, 0, len(fis))
-	for _, fi := range fis {
-		if fi.IsDir() {
-			subs = append(subs, fi.Name())
+	subs := make([]string, 0, len(fileinfos))
+	for _, fileinfo := range fileinfos {
+		if fileinfo.IsDir() {
+			subs = append(subs, fileinfo.Name())
 			continue
 		}
-		match, err := filepath.Match("*"+ns.ext, fi.Name())
+		match, err := filepath.Match("*"+ns.ext, fileinfo.Name())
 		if err != nil {
 			return ErrParse.WrapCause("file extension match", err)
 		}
 		if !match {
 			continue
 		}
-		_, err = tmpl.ParseFiles(path.Join(dir, fi.Name()))
+		_, err = tmpl.ParseFiles(path.Join(dir, fileinfo.Name()))
 		if err != nil {
 			return ErrParse.WrapCause("parse template", err)
 		}
 	}
 	ns.namespaces[nsname] = tmpl
 	for _, sub := range subs {
-		fn := filepath.Join(dir, sub)
-		tn := path.Join(nsname, sub)
-		nt, err := tmpl.Clone()
+		filename := filepath.Join(dir, sub)
+		templatename := path.Join(nsname, sub)
+		newtemplate, err := tmpl.Clone()
 		if err != nil {
 			return ErrParse.WrapCause("clone", err)
 		}
-		if err := ns.parseDir(fn, tn, nt); err != nil {
+		if err := ns.parseDir(filename, templatename, newtemplate); err != nil {
 			return err
 		}
 	}
@@ -189,20 +189,20 @@ func (ns *Namespaces) parseDir(dir, nsname string, tmpl *template.Template) erro
 // tmpl and registers it as a namespace with ns under specified nsname.
 // If an error occurs it is returned.
 func (ns *Namespaces) parseDirFS(filesys fs.FS, dir, nsname string, tmpl *template.Template) error {
-	dirf, err := filesys.Open(dir)
+	file, err := filesys.Open(dir)
 	if err != nil {
 		return ErrParse.WrapCause("", err)
 	}
-	rf, ok := dirf.(fs.ReadDirFile)
+	readdirfile, ok := file.(fs.ReadDirFile)
 	if !ok {
 		return ErrParse.WrapCause("", ErrUnsupportedOp.WrapArgs("ReadDirFile"))
 	}
-	fis, err := rf.ReadDir(-1)
+	fileinfos, err := readdirfile.ReadDir(-1)
 	if err != nil {
 		return ErrParse.WrapCause("read file infos", err)
 	}
-	subs := make([]string, 0, len(fis))
-	for _, fi := range fis {
+	subs := make([]string, 0, len(fileinfos))
+	for _, fi := range fileinfos {
 		if fi.IsDir() {
 			subs = append(subs, fi.Name())
 			continue
@@ -214,28 +214,28 @@ func (ns *Namespaces) parseDirFS(filesys fs.FS, dir, nsname string, tmpl *templa
 		if !match {
 			continue
 		}
-		tf, err := filesys.Open(path.Join(dir, fi.Name()))
+		templatefile, err := filesys.Open(path.Join(dir, fi.Name()))
 		if err != nil {
 			return ErrParse.WrapCause("", err)
 		}
-		defer tf.Close()
-		tfb, err := ioutil.ReadAll(tf)
+		defer templatefile.Close()
+		templatefilebytes, err := ioutil.ReadAll(templatefile)
 		if err != nil {
 			return ErrParse.WrapCause("", err)
 		}
-		if _, err := tmpl.Parse(string(tfb)); err != nil {
+		if _, err := tmpl.Parse(string(templatefilebytes)); err != nil {
 			return ErrParse.WrapCause("parse template", err)
 		}
 	}
 	ns.namespaces[nsname] = tmpl
 	for _, sub := range subs {
-		fn := filepath.Join(dir, sub)
-		tn := path.Join(nsname, sub)
-		nt, err := tmpl.Clone()
+		filename := filepath.Join(dir, sub)
+		templatename := path.Join(nsname, sub)
+		newtemplate, err := tmpl.Clone()
 		if err != nil {
 			return ErrParse.WrapCause("clone", err)
 		}
-		if err := ns.parseDirFS(filesys, fn, tn, nt); err != nil {
+		if err := ns.parseDirFS(filesys, filename, templatename, newtemplate); err != nil {
 			return err
 		}
 	}
