@@ -10,6 +10,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/vedranvuk/fsex"
 )
 
 func TestDefinedTemplates(t *testing.T) {
@@ -25,6 +27,40 @@ func TestNamespaces(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	tt := New("index", ".html")
 	if err := tt.ParseRoot("test/data"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ExecuteNamespace(buf, "/", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ExecuteNamespace(buf, "/home", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ExecuteNamespace(buf, "/settings", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ExecuteNamespace(buf, "/settings/preferences", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ExecuteNamespace(buf, "/settings/profile", nil); err != nil {
+		t.Fatal(err)
+	}
+	var verbose bool
+	for _, v := range os.Args {
+		if strings.HasPrefix(v, "-test.v") {
+			verbose = true
+			break
+		}
+	}
+	if verbose {
+		fmt.Println(buf.String())
+	}
+}
+
+func TestNamespacesFS(t *testing.T) {
+	md := fsex.NewMountedDir("test/data")
+	buf := bytes.NewBuffer(nil)
+	tt := New("index", ".html")
+	if err := tt.ParseRootFS(md, "."); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.ExecuteNamespace(buf, "/", nil); err != nil {

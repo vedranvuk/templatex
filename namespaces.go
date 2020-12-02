@@ -218,7 +218,7 @@ func (ns *Namespaces) parseDirFS(filesys fs.FS, dir, nsname string, tmpl *templa
 			subs = append(subs, fi.Name())
 			continue
 		}
-		match, err := filepath.Match("*"+ns.ext, fi.Name())
+		match, err := path.Match("*"+ns.ext, fi.Name())
 		if err != nil {
 			return ErrParse.WrapCause("file extension match", err)
 		}
@@ -240,7 +240,7 @@ func (ns *Namespaces) parseDirFS(filesys fs.FS, dir, nsname string, tmpl *templa
 	}
 	ns.namespaces[nsname] = tmpl
 	for _, sub := range subs {
-		filename := filepath.Join(dir, sub)
+		filename := path.Join(dir, sub)
 		templatename := path.Join(nsname, sub)
 		newtemplate, err := tmpl.Clone()
 		if err != nil {
