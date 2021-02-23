@@ -4,9 +4,9 @@
 
 package templatex
 
-import "github.com/vedranvuk/errorex"
+import "errors"
 
 var (
 	// ErrTemplatex is the base error of templatex package.
-	ErrTemplatex = errorex.New("templatex")
+	ErrTemplatex = errors.New("templatex")
 )

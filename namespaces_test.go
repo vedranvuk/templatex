@@ -57,9 +57,12 @@ func TestNamespaces(t *testing.T) {
 }
 
 func TestNamespacesFS(t *testing.T) {
-	md := fsex.NewMountedDir("test/data")
-	buf := bytes.NewBuffer(nil)
-	tt := New("index", ".html")
+	var md, err = fsex.NewMountedDir("test/data")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf = bytes.NewBuffer(nil)
+	var tt = New("index", ".html")
 	if err := tt.ParseRootFS(md, "."); err != nil {
 		t.Fatal(err)
 	}
@@ -89,3 +92,4 @@ func TestNamespacesFS(t *testing.T) {
 		fmt.Println(buf.String())
 	}
 }
+

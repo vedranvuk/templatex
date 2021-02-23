@@ -1,2 +1,4 @@
-github.com/vedranvuk/fsex v0.0.2 h1:SLTNlSUKu+ShFMAQesJPCOG2PTmoX1bxB7bgq1Ii+jg=
-github.com/vedranvuk/fsex v0.0.2/go.mod h1:wPR5fWtX4JalyKCEkczya87603a024EunqSY8z6z3EY=
+github.com/vedranvuk/fs v0.0.2/go.mod h1:o8U2XLbC7qMweqQsAmvUhvuuhvBOkBnxJBXZGgHJRJI=
+github.com/vedranvuk/fsex v0.0.7 h1:YZyK3tnCKOtYbFA7wEf4TmCM6sLGB6CDyG/52kfmO3s=
+github.com/vedranvuk/fsex v0.0.7/go.mod h1:WVcV9+hrzo339gjlNFwzrZz+wKJe8t8wa8e4y2KTScA=
+github.com/vedranvuk/sortex v0.0.2/go.mod h1:DTHb2Ygmn92VgutjLW2EHnTCSMvpl7XZt1bOSbOD4y0=

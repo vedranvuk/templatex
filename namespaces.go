@@ -5,25 +5,25 @@
 package templatex
 
 import (
+	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"path"
 	"path/filepath"
 	"sync"
-
-	"github.com/vedranvuk/fs"
 )
 
 var (
 	// ErrParse is returned when a parse error occurs.
-	ErrParse = ErrTemplatex.Wrap("parse error")
+	ErrParse = fmt.Errorf("%w: parse error", ErrTemplatex)
 	// ErrNotFound is returned when a non-existent namespace is
 	// being addressed.
-	ErrNotFound = ErrTemplatex.WrapFormat("namespace '%s' not found")
+	ErrNotFound = fmt.Errorf("%w: namespace not found", ErrTemplatex)
 
 	// ErrUnsupportedOp is returned when an unsupporrted op is encountered in an FS.
-	ErrUnsupportedOp = ErrTemplatex.WrapFormat("unsupported operation '%s'")
+	ErrUnsupportedOp = fmt.Errorf("%w: unsupported operation", ErrTemplatex)
 )
 
 // ParseRoot is a helper that combines New and Namespaces.ParseRoot.
@@ -138,7 +138,7 @@ func (ns *Namespaces) ExecuteNamespace(w io.Writer, path string, data interface{
 
 	tt, found := ns.namespaces[path]
 	if !found {
-		return ErrNotFound.WrapArgs(path)
+		return fmt.Errorf("%w: %s", ErrNotFound, path)
 	}
 	return tt.ExecuteTemplate(w, ns.index+ns.ext, data)
 }
@@ -161,7 +161,7 @@ func (ns *Namespaces) DefinedNamespaces() (result []string) {
 func (ns *Namespaces) parseDir(dir, nsname string, tmpl *template.Template) error {
 	fileinfos, err := ioutil.ReadDir(dir)
 	if err != nil {
-		return ErrParse.WrapCause("read file infos", err)
+		return fmt.Errorf("%w: %s: %v", ErrParse, "read file infos", err)
 	}
 	subs := make([]string, 0, len(fileinfos))
 	for _, fileinfo := range fileinfos {
@@ -171,14 +171,14 @@ func (ns *Namespaces) parseDir(dir, nsname string, tmpl *template.Template) erro
 		}
 		match, err := filepath.Match("*"+ns.ext, fileinfo.Name())
 		if err != nil {
-			return ErrParse.WrapCause("file extension match", err)
+			return fmt.Errorf("%w: %s: %v", ErrParse, "file extension match", err)
 		}
 		if !match {
 			continue
 		}
 		_, err = tmpl.ParseFiles(path.Join(dir, fileinfo.Name()))
 		if err != nil {
-			return ErrParse.WrapCause("parse template", err)
+			return fmt.Errorf("%w: %s: %v", ErrParse, "parse template", err)
 		}
 	}
 	ns.namespaces[nsname] = tmpl
@@ -187,7 +187,7 @@ func (ns *Namespaces) parseDir(dir, nsname string, tmpl *template.Template) erro
 		templatename := path.Join(nsname, sub)
 		newtemplate, err := tmpl.Clone()
 		if err != nil {
-			return ErrParse.WrapCause("clone", err)
+			return fmt.Errorf("%w: %s: %v", ErrParse, "clone", err)
 		}
 		if err := ns.parseDir(filename, templatename, newtemplate); err != nil {
 			return err
@@ -202,15 +202,15 @@ func (ns *Namespaces) parseDir(dir, nsname string, tmpl *template.Template) erro
 func (ns *Namespaces) parseDirFS(filesys fs.FS, dir, nsname string, tmpl *template.Template) error {
 	file, err := filesys.Open(dir)
 	if err != nil {
-		return ErrParse.WrapCause("", err)
+		return fmt.Errorf("%w: %v", ErrParse, err)
 	}
 	readdirfile, ok := file.(fs.ReadDirFile)
 	if !ok {
-		return ErrParse.WrapCause("", ErrUnsupportedOp.WrapArgs("ReadDirFile"))
+		return fmt.Errorf("%w: %s", ErrUnsupportedOp, "ReadDirFile")
 	}
 	fileinfos, err := readdirfile.ReadDir(-1)
 	if err != nil {
-		return ErrParse.WrapCause("read file infos", err)
+		return fmt.Errorf("%w: %s: %v", ErrParse, "read file infos", err)
 	}
 	subs := make([]string, 0, len(fileinfos))
 	for _, fi := range fileinfos {
@@ -220,22 +220,22 @@ func (ns *Namespaces) parseDirFS(filesys fs.FS, dir, nsname string, tmpl *templa
 		}
 		match, err := path.Match("*"+ns.ext, fi.Name())
 		if err != nil {
-			return ErrParse.WrapCause("file extension match", err)
+			return fmt.Errorf("%w: %s: %v", ErrParse, "file extension match", err)
 		}
 		if !match {
 			continue
 		}
 		templatefile, err := filesys.Open(path.Join(dir, fi.Name()))
 		if err != nil {
-			return ErrParse.WrapCause("", err)
+			return fmt.Errorf("%w: %v", ErrParse, err)
 		}
 		defer templatefile.Close()
 		templatefilebytes, err := ioutil.ReadAll(templatefile)
 		if err != nil {
-			return ErrParse.WrapCause("", err)
+			return fmt.Errorf("%w: %v", ErrParse, err)
 		}
 		if _, err := tmpl.Parse(string(templatefilebytes)); err != nil {
-			return ErrParse.WrapCause("parse template", err)
+			return fmt.Errorf("%w: %s: %v", ErrParse, "parse template", err)
 		}
 	}
 	ns.namespaces[nsname] = tmpl
@@ -244,7 +244,7 @@ func (ns *Namespaces) parseDirFS(filesys fs.FS, dir, nsname string, tmpl *templa
 		templatename := path.Join(nsname, sub)
 		newtemplate, err := tmpl.Clone()
 		if err != nil {
-			return ErrParse.WrapCause("clone", err)
+			return fmt.Errorf("%w: %s: %v", ErrParse, "clone", err)
 		}
 		if err := ns.parseDirFS(filesys, filename, templatename, newtemplate); err != nil {
 			return err
