@@ -9,7 +9,7 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
-	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 	"sync"
@@ -159,7 +159,7 @@ func (ns *Namespaces) DefinedNamespaces() (result []string) {
 // tmpl and registers it as a namespace with ns under specified nsname.
 // If an error occurs it is returned.
 func (ns *Namespaces) parseDir(dir, nsname string, tmpl *template.Template) error {
-	fileinfos, err := ioutil.ReadDir(dir)
+	fileinfos, err := os.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("%w: %s: %v", ErrParse, "read file infos", err)
 	}
@@ -230,7 +230,7 @@ func (ns *Namespaces) parseDirFS(filesys fs.FS, dir, nsname string, tmpl *templa
 			return fmt.Errorf("%w: %v", ErrParse, err)
 		}
 		defer templatefile.Close()
-		templatefilebytes, err := ioutil.ReadAll(templatefile)
+		templatefilebytes, err := io.ReadAll(templatefile)
 		if err != nil {
 			return fmt.Errorf("%w: %v", ErrParse, err)
 		}
